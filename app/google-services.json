@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "259091999855",
+    "firebase_url": "https://github-repos-bd393.firebaseio.com",
+    "project_id": "github-repos-bd393",
+    "storage_bucket": "github-repos-bd393.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:259091999855:android:a2bb5b710a1a2df9da719a",
+        "android_client_info": {
+          "package_name": "com.railian.mobile.githubrepos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "259091999855-cfphgdn7sacvquah20svgdddqbja12jm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.railian.mobile.githubrepos",
+            "certificate_hash": "79ee36dc17193840dba25fcc49aafccecb10bdb8"
+          }
+        },
+        {
+          "client_id": "259091999855-5jh0dr0jnf5ueu6m5oelttrmkgl5gcoo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOyg9PC3duErJDyfsUZX1s1vVBWupkaY4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "259091999855-5jh0dr0jnf5ueu6m5oelttrmkgl5gcoo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
