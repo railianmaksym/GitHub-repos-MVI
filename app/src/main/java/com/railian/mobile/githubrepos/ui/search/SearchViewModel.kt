@@ -3,7 +3,6 @@ package com.railian.mobile.githubrepos.ui.search
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.railian.mobile.githubrepos.ui.base.BaseMviViewModel
-import com.railian.mobile.githubrepos.ui.base.ReposListViewState
 
 class SearchViewModel : BaseMviViewModel<SearchAction, ReposListViewState>() {
 

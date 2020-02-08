@@ -24,5 +24,5 @@ abstract class BaseMviViewModel<A : UiAction, S : ViewState> : ViewModel() {
         actionsData?.removeObserver(observer)
     }
 
-    abstract fun handleUiAction(action: A)
+    protected abstract fun handleUiAction(action: A)
 }

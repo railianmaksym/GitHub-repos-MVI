@@ -9,12 +9,15 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.OAuthProvider
 import com.railian.mobile.githubrepos.R
 import com.railian.mobile.githubrepos.ui.base.MviView
-import com.railian.mobile.githubrepos.ui.base.ReposListViewState
 
 class SearchFragment : Fragment(R.layout.fragment_search),
     MviView<SearchAction, ReposListViewState> {
+
+    override var currentState: ReposListViewState =
+        ReposListViewState()
 
     override val action: MutableLiveData<SearchAction> = MutableLiveData()
 
@@ -34,30 +37,29 @@ class SearchFragment : Fragment(R.layout.fragment_search),
         super.onViewCreated(view, savedInstanceState)
         viewModel.bind(action)
 
+        val provider = OAuthProvider.newBuilder("github.com")
+        val scopes = listOf("user:email")
+        provider.setScopes(scopes)
+
+        auth.startActivityForSignInWithProvider(activity!!, provider.build())
+            .addOnSuccessListener {
+                // save user data in repository
+                println(it)
+            }
+            .addOnFailureListener {
+                println(it)
+                // show error and block search
+            }
+
         viewModel.state.observe(viewLifecycleOwner, Observer<ReposListViewState> {
-            println("")
+            renderOnNewState(it) {
+                println("")
+            }
         })
 
-        action.value = SearchAction.SearchReposAction("MVI")
-//        val provider = OAuthProvider.newBuilder("github.com")
-//        val scopes = listOf("user:email")
-//        provider.setScopes(scopes)
-//
-//        auth.startActivityForSignInWithProvider(activity!!, provider.build())
-//            .addOnSuccessListener {
-//                // save user data in repository
-//                println(it)
-//            }
-//            .addOnFailureListener {
-//                println(it)
-//                // show error and block search
-//            }
-//
-//        auth.signOut()
+        if (savedInstanceState == null) {
+            action.value =
+                SearchAction.SearchReposAction("MVI", SearchAction.DataSource.NETWORK)
+        }
     }
-
-    override fun render(state: ReposListViewState) {
-
-    }
-
 }
