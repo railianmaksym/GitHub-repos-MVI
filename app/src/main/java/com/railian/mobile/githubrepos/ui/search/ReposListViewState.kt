@@ -3,8 +3,9 @@ package com.railian.mobile.githubrepos.ui.search
 import com.railian.mobile.githubrepos.data.pojo.GitHubRepository
 import com.railian.mobile.githubrepos.ui.base.ViewState
 
-data class ReposListViewState(
-    val loading: Boolean = false,
-    val repos: List<GitHubRepository> = listOf(),
-    val error: Throwable? = null
-) : ViewState()
+sealed class ReposListViewState : ViewState() {
+    object Empty : ReposListViewState()
+    object Loading : ReposListViewState()
+    class Data(val repos: List<GitHubRepository>) : ReposListViewState()
+    class Error(val error: Throwable) : ReposListViewState()
+}

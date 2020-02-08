@@ -4,24 +4,24 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 
-abstract class BaseMviViewModel<A : UiAction, S : ViewState> : ViewModel() {
+abstract class BaseDataFlow<A : UiAction, S : ViewState> : ViewModel() {
 
-    abstract val state: LiveData<S>
+    abstract val stateFlow: LiveData<S>
 
-    private var actionsData: LiveData<A>? = null
+    private var actionFlow: LiveData<A>? = null
 
     private val observer = Observer<A> {
         handleUiAction(it)
     }
 
     fun bind(action: LiveData<A>) {
-        actionsData = action
-        actionsData?.observeForever(observer)
+        actionFlow = action
+        actionFlow?.observeForever(observer)
     }
 
     override fun onCleared() {
         super.onCleared()
-        actionsData?.removeObserver(observer)
+        actionFlow?.removeObserver(observer)
     }
 
     protected abstract fun handleUiAction(action: A)

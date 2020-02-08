@@ -8,21 +8,41 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.OAuthProvider
+import com.google.firebase.auth.zzg
+import com.railian.mobile.githubrepos.GitHubReposApp
 import com.railian.mobile.githubrepos.R
+import com.railian.mobile.githubrepos.data.local.prefs.UserDataStore
+import com.railian.mobile.githubrepos.di.search.SearchModule
+import com.railian.mobile.githubrepos.di.viewModel.DaggerViewModelFactory
 import com.railian.mobile.githubrepos.ui.base.MviView
+import com.railian.mobile.githubrepos.ui.search.dataFlow.SearchAction
+import com.railian.mobile.githubrepos.ui.search.dataFlow.SearchDataFlow
+import javax.inject.Inject
 
 class SearchFragment : Fragment(R.layout.fragment_search),
     MviView<SearchAction, ReposListViewState> {
 
     override var currentState: ReposListViewState =
-        ReposListViewState()
+        ReposListViewState.Empty
 
-    override val action: MutableLiveData<SearchAction> = MutableLiveData()
+    override val actionFlow: MutableLiveData<SearchAction> = MutableLiveData()
 
+    @Inject
+    lateinit var viewModelFactory: DaggerViewModelFactory
+    @Inject
+    lateinit var userDataStore: UserDataStore
+    private lateinit var searchDataFlow: SearchDataFlow
     private lateinit var auth: FirebaseAuth
-    private val viewModel = SearchViewModel()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        GitHubReposApp.appComponent.getModule(SearchModule()).inject(this)
+        searchDataFlow =
+            ViewModelProviders.of(this, viewModelFactory).get(SearchDataFlow::class.java)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,7 +55,7 @@ class SearchFragment : Fragment(R.layout.fragment_search),
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewModel.bind(action)
+        searchDataFlow.bind(actionFlow)
 
         val provider = OAuthProvider.newBuilder("github.com")
         val scopes = listOf("user:email")
@@ -45,21 +65,34 @@ class SearchFragment : Fragment(R.layout.fragment_search),
             .addOnSuccessListener {
                 // save user data in repository
                 println(it)
+                userDataStore.token = (it.credential as zzg).accessToken
+                if (savedInstanceState == null) {
+                    actionFlow.value =
+                        SearchAction.SearchReposAction("MVI", 1, SearchAction.DataSource.NETWORK)
+                }
             }
             .addOnFailureListener {
                 println(it)
                 // show error and block search
             }
 
-        viewModel.state.observe(viewLifecycleOwner, Observer<ReposListViewState> {
+        searchDataFlow.stateFlow.observe(viewLifecycleOwner, Observer<ReposListViewState> {
             renderOnNewState(it) {
-                println("")
+                when (it) {
+                    is ReposListViewState.Empty -> {
+                        println(it)
+                    }
+                    is ReposListViewState.Loading -> {
+                        println(it)
+                    }
+                    is ReposListViewState.Data -> {
+                        println(it)
+                    }
+                    is ReposListViewState.Error -> {
+                        println(it)
+                    }
+                }
             }
         })
-
-        if (savedInstanceState == null) {
-            action.value =
-                SearchAction.SearchReposAction("MVI", SearchAction.DataSource.NETWORK)
-        }
     }
 }
