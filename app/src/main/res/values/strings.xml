@@ -6,4 +6,5 @@
     <string name="search_hint">Search on GitHub</string>
     <string name="data_source">Data source</string>
     <string name="network">Network</string>
+    <string name="query_validation">Search query lenth must be more then 2 characters</string>
 </resources>

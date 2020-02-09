@@ -5,43 +5,36 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.OAuthProvider
-import com.google.firebase.auth.zzg
 import com.railian.mobile.githubrepos.GitHubReposApp
 import com.railian.mobile.githubrepos.R
-import com.railian.mobile.githubrepos.data.local.prefs.UserDataStore
 import com.railian.mobile.githubrepos.di.search.SearchModule
 import com.railian.mobile.githubrepos.di.viewModel.DaggerViewModelFactory
-import com.railian.mobile.githubrepos.ui.base.MviView
-import com.railian.mobile.githubrepos.ui.search.dataFlow.SearchAction
-import com.railian.mobile.githubrepos.ui.search.dataFlow.SearchDataFlow
+import com.railian.mobile.githubrepos.util.extensions.makeClearableEditText
+import com.railian.mobile.githubrepos.util.extensions.openUrlInBrowser
+import com.railian.mobile.githubrepos.util.ui.LastItemVisibilityListener
+import kotlinx.android.synthetic.main.app_bar_search.*
+import kotlinx.android.synthetic.main.fragment_search.*
 import javax.inject.Inject
 
-class SearchFragment : Fragment(R.layout.fragment_search),
-    MviView<SearchAction, ReposListViewState> {
-
-    override var currentState: ReposListViewState =
-        ReposListViewState.Empty
-
-    override val actionFlow: MutableLiveData<SearchAction> = MutableLiveData()
+class SearchFragment : Fragment(R.layout.fragment_search) {
 
     @Inject
     lateinit var viewModelFactory: DaggerViewModelFactory
-    @Inject
-    lateinit var userDataStore: UserDataStore
-    private lateinit var searchDataFlow: SearchDataFlow
+
+    private lateinit var searchViewModel: SearchViewModel
     private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         GitHubReposApp.appComponent.getModule(SearchModule()).inject(this)
-        searchDataFlow =
-            ViewModelProviders.of(this, viewModelFactory).get(SearchDataFlow::class.java)
+        searchViewModel =
+            ViewModelProviders.of(this, viewModelFactory).get(SearchViewModel::class.java)
     }
 
     override fun onCreateView(
@@ -55,44 +48,50 @@ class SearchFragment : Fragment(R.layout.fragment_search),
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        searchDataFlow.bind(actionFlow)
+        prepareRecyclerView()
+        prepareSearchField()
+        searchViewModel.repositoryUrl
+            .observe(viewLifecycleOwner, Observer {
+                if (it.isNotEmpty())
+                    activity?.openUrlInBrowser(it)
+            })
+    }
 
-        val provider = OAuthProvider.newBuilder("github.com")
-        val scopes = listOf("user:email")
-        provider.setScopes(scopes)
+    private fun prepareSearchField() {
+        searchText.run {
+            makeClearableEditText(
+                clearDrawable = ContextCompat.getDrawable(context!!, R.drawable.ic_close_dark)!!
+            )
 
-        auth.startActivityForSignInWithProvider(activity!!, provider.build())
-            .addOnSuccessListener {
-                // save user data in repository
-                println(it)
-                userDataStore.token = (it.credential as zzg).accessToken
-                if (savedInstanceState == null) {
-                    actionFlow.value =
-                        SearchAction.SearchReposAction("MVI", 1, SearchAction.DataSource.NETWORK)
-                }
+            setOnEditorActionListener { _, action, _ ->
+                if (action == EditorInfo.IME_ACTION_SEARCH) {
+                    if (searchText.text.trim().length < 2) {
+                        // showError(R.string.query_validation)
+                        return@setOnEditorActionListener false
+                    }
+                    searchViewModel.searchRepositories(searchText.text.toString().trim())
+                    false
+                } else
+                    return@setOnEditorActionListener true
             }
-            .addOnFailureListener {
-                println(it)
-                // show error and block search
-            }
+        }
+    }
 
-        searchDataFlow.stateFlow.observe(viewLifecycleOwner, Observer<ReposListViewState> {
-            renderOnNewState(it) {
-                when (it) {
-                    is ReposListViewState.Empty -> {
-                        println(it)
-                    }
-                    is ReposListViewState.Loading -> {
-                        println(it)
-                    }
-                    is ReposListViewState.Data -> {
-                        println(it)
-                    }
-                    is ReposListViewState.Error -> {
-                        println(it)
-                    }
-                }
+    private fun prepareRecyclerView() {
+        searchResults.adapter = searchViewModel.repositoriesAdapter
+        searchResults.addOnScrollListener(object : LastItemVisibilityListener() {
+            override fun onLastItemVisible() {
+                if (!searchViewModel.isLoadingProcess)
+                    searchViewModel.searchRepositories(
+                        searchText.text.toString().trim(),
+                        isPaging = true
+                    )
             }
         })
+    }
+
+    override fun onStop() {
+        super.onStop()
+        searchViewModel.repositoryUrl.removeObservers(viewLifecycleOwner)
     }
 }

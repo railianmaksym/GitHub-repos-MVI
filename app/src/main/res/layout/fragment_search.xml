@@ -71,13 +71,16 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/filterLayout"
-        android:visibility="gone" />
+        android:orientation="vertical"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/item_github_repository" />
 
     <RelativeLayout
         android:id="@+id/emptyListLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/filterLayout">
+        android:layout_below="@id/filterLayout"
+        android:visibility="gone">
 
         <ImageView
             android:layout_width="120dp"
