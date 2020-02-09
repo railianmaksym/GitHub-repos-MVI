@@ -5,8 +5,8 @@ import com.railian.mobile.githubrepos.ui.base.UiAction
 sealed class SearchAction : UiAction() {
     class SearchReposAction(
         val query: String,
-        val page: Int,
-        val source: DataSource
+        val isPaging: Boolean = false,
+        val isReload: Boolean = false
     ) : SearchAction()
 
     enum class DataSource {

@@ -11,30 +11,50 @@ class SearchMiddleware @Inject constructor(
     private val networkSearchRepository: NetworkSearchRepository,
     private val localSearchRepository: LocalSearchRepository
 ) : Middleware<SearchAction, ReposListViewState> {
-    override suspend fun performAction(action: SearchAction): ReposListViewState {
+
+    private var currentSource = SearchAction.DataSource.NETWORK
+    private var currentPage = 1
+
+    override suspend fun performAction(
+        action: SearchAction,
+        currentState: ReposListViewState
+    ): ReposListViewState {
         return when (action) {
-            is SearchAction.SearchReposAction -> searchRepositories(action)
+            is SearchAction.SearchReposAction -> searchRepositories(
+                action.query,
+                action.isPaging,
+                action.isReload,
+                currentState
+            )
             //  other actions
         }
     }
 
     private suspend fun searchRepositories(
-        action: SearchAction.SearchReposAction
+        query: String,
+        isPaging: Boolean = false,
+        isReload: Boolean = false,
+        currentState: ReposListViewState
     ): ReposListViewState {
-        val result = when (action.source) {
+        calculateNewPage(isPaging, isReload)
+        val result = when (currentSource) {
             SearchAction.DataSource.NETWORK ->
-                networkSearchRepository.searchRepos(query = action.query, page = action.page)
+                networkSearchRepository.searchRepos(query = query, page = currentPage)
             SearchAction.DataSource.LOCAL ->
-                localSearchRepository.searchRepos(query = action.query, page = action.page)
+                localSearchRepository.searchRepos(query = query, page = currentPage)
         }
 
         return when (result) {
-            is Result.Success ->
-                if (result.data.isNotEmpty())
-                    ReposListViewState.Data(result.data)
-                else
-                    ReposListViewState.Empty
-            is Result.Error -> ReposListViewState.Error(result.error)
+            is Result.Success -> currentState.copy(repositories = result.data)
+            is Result.Error -> currentState.copy(error = result.error)
+        }
+    }
+
+    private fun calculateNewPage(isPaging: Boolean, isReload: Boolean) {
+        currentPage = when {
+            isPaging -> ++currentPage
+            isReload -> 1
+            else -> return
         }
     }
 }
